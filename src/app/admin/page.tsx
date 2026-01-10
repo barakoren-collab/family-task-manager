@@ -5,7 +5,7 @@ import { store } from '@/lib/store';
 import { User, Task } from '@/types';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Trash2, X, Check } from 'lucide-react';
+import { Pencil, Trash2, X, Check, Lock } from 'lucide-react';
 
 export default function AdminPage() {
     const { currentUser, users } = useUser();
@@ -333,6 +333,46 @@ export default function AdminPage() {
                         Apply Penalty (-{penaltyPoints} pts)
                     </button>
                 </form>
+            </div>
+
+            {/* MANAGE FAMILY SECTION */}
+            <div className="p-6 rounded-2xl shadow-sm border border-indigo-100 bg-white">
+                <h2 className="font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                    <Check size={20} className="text-indigo-600" /> Manage Family Passwords
+                </h2>
+                <div className="space-y-4">
+                    {users.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                                    {user.avatar_url?.startsWith('http') ? (
+                                        <img src={user.avatar_url} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-indigo-100 flex items-center justify-center text-xl">{user.avatar_url}</div>
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 leading-none">{user.name}</p>
+                                    <p className="text-[10px] text-gray-500 uppercase mt-1">{user.role}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    const newPwd = prompt(`Enter new password for ${user.name}:`, user.password);
+                                    if (newPwd && newPwd.length >= 3) {
+                                        await store.updateUser({ ...user, password: newPwd });
+                                        alert(`${user.name}'s password updated!`);
+                                    } else if (newPwd !== null) {
+                                        alert('Password must be at least 3 characters.');
+                                    }
+                                }}
+                                className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:border-indigo-500 hover:text-indigo-600 transition-all flex items-center gap-1 shadow-sm"
+                            >
+                                <Lock size={12} /> Reset
+                            </button>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* EXISTING TASKS LIST */}
