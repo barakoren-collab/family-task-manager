@@ -5,8 +5,10 @@ export interface User {
     name: string;
     role: UserRole;
     avatar_url?: string;
-    xp: number;
-    points: number;
+    xp: number;         // Current weekly XP
+    points: number;     // Spendable points
+    total_xp: number;   // Lifetime XP
+    xp_spent: number;   // Total XP/Points spent (optional but useful)
     level: number;
     password?: string;
 }
@@ -18,7 +20,7 @@ export interface Task {
     title: string;
     description?: string;
     points_reward: number;
-    assigned_to: string | 'unassigned'; // User ID or 'unassigned'
+    assigned_to: string | 'unassigned' | 'all'; // User ID, 'unassigned', or 'all'
     status: TaskStatus;
     is_recurring: boolean;
     recurrence_pattern?: 'daily' | 'weekly';
@@ -35,10 +37,17 @@ export interface Reward {
     icon?: string;
 }
 
+export interface Consequence {
+    id: string;
+    title: string;
+    points_deduction: number;
+    created_at: string;
+}
+
 export interface Activity {
     id: string;
     user_id: string;
-    type: 'task_complete' | 'levelup' | 'purchase';
+    type: 'task_complete' | 'levelup' | 'purchase' | 'suggestion';
     details: string;
     created_at: string;
 }

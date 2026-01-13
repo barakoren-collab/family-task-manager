@@ -2,7 +2,7 @@
 
 import { Task } from '@/types';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Circle, Clock, Repeat, UserPlus } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Repeat, UserPlus, Star } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
@@ -20,11 +20,13 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
 
     const isAssignedToMe = currentUser?.id === task.assigned_to;
     const isUnassigned = task.assigned_to === 'unassigned';
+    const isAssignedToAll = task.assigned_to === 'all';
     const isPendingApproval = task.status === 'completed';
-    const isApproved = task.status === 'approved'; // Shouldn't show usually
+    const isApproved = task.status === 'approved';
 
     // Determine interaction permission
-    const canInteract = (isAssignedToMe || isUnassigned) && task.status === 'pending';
+    const canInteract = (isAssignedToMe || isUnassigned || isAssignedToAll) && task.status === 'pending';
+    const isParent = currentUser?.role === 'parent';
 
     const handleAction = async () => {
         if (!currentUser) return;
@@ -51,7 +53,7 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
         });
 
         if (newCount >= required) {
-            // FULL COMPLETION
+            // FULL COMPLETION (Sets to completed for parent approval)
             confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } }); // Big boom
             await new Promise(r => setTimeout(r, 800));
             await store.updateTask(task.id, {
@@ -68,6 +70,48 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
         setIsProcessing(false);
     };
 
+    const handleApprove = async () => {
+        if (!isParent || !currentUser) return;
+        setIsProcessing(true);
+
+        // Find the user who did the task
+        const workerId = task.assigned_to;
+        if (workerId && workerId !== 'unassigned' && workerId !== 'all') {
+            const users = await store.getUsers();
+            const worker = users.find(u => u.id === workerId);
+            if (worker) {
+                // Award points and XP
+                await store.updateUser({
+                    ...worker,
+                    points: worker.points + task.points_reward,
+                    xp: worker.xp + task.points_reward,
+                    total_xp: (worker.total_xp || 0) + task.points_reward
+                });
+            }
+        }
+
+        // Mark as approved (or delete if it's a one-off)
+        if (task.is_recurring) {
+            // Reset for next time
+            await store.updateTask(task.id, {
+                status: 'pending',
+                current_count: 0
+            });
+        } else {
+            await store.updateTask(task.id, { status: 'approved' });
+        }
+
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.3 },
+            colors: ['#22c55e'] // Emerald
+        });
+
+        if (onUpdate) onUpdate();
+        setIsProcessing(false);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -75,7 +119,7 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
             layout
             className={cn(
                 "bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden",
-                isPendingApproval && "bg-gray-50 opacity-80",
+                isPendingApproval && "bg-gray-50 border-orange-100",
                 isUnassigned && "border-dashed border-indigo-300 bg-indigo-50/30"
             )}
         >
@@ -95,6 +139,11 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                         {isUnassigned && (
                             <span className="text-indigo-600 text-xs font-bold flex items-center gap-1">
                                 <UserPlus size={12} /> Anyone
+                            </span>
+                        )}
+                        {isAssignedToAll && (
+                            <span className="text-indigo-600 text-xs font-bold flex items-center gap-1">
+                                <Star size={12} /> Everyone
                             </span>
                         )}
                         {task.recurrence_pattern && (
@@ -139,9 +188,19 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                     </button>
                 )}
 
-                {isPendingApproval && (
-                    <div className="h-12 w-12 flex items-center justify-center text-green-500">
-                        <CheckCircle2 size={28} />
+                {isPendingApproval && isParent && (
+                    <button
+                        onClick={handleApprove}
+                        disabled={isProcessing}
+                        className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-100 hover:bg-emerald-600 active:scale-95 transition-all flex items-center gap-2"
+                    >
+                        {isProcessing ? '...' : <CheckCircle2 size={18} />} Approve
+                    </button>
+                )}
+
+                {isPendingApproval && !isParent && (
+                    <div className="h-12 w-12 flex items-center justify-center text-orange-500">
+                        <Clock size={28} />
                     </div>
                 )}
             </div>
@@ -157,9 +216,9 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                 </div>
             )}
 
-            {isPendingApproval && (
-                <div className="text-xs text-orange-500 flex items-center gap-1 mt-2">
-                    <Clock size={12} /> Pending Parent Verification
+            {isPendingApproval && !isParent && (
+                <div className="text-xs text-orange-500 flex items-center gap-1 mt-2 font-medium">
+                    <Clock size={12} /> Waiting for Parent to Approve
                 </div>
             )}
 

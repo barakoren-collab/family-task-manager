@@ -15,12 +15,7 @@ export function BottomNav() {
         { name: 'Tasks', path: '/tasks', icon: CheckSquare },
         { name: 'Rank', path: '/leaderboard', icon: Trophy },
         { name: 'Store', path: '/store', icon: ShoppingBag },
-        // { name: 'Profile', path: '/profile', icon: UserIcon },
     ];
-
-    if (currentUser?.role === 'parent') {
-        tabs.push({ name: 'Admin', path: '/admin', icon: Settings });
-    }
 
     return (
         <div className="fixed bottom-0 left-0 right-0 border-t bg-white pb-safe pt-2 px-4 shadow-lg z-50">
