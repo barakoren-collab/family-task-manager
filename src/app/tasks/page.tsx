@@ -242,9 +242,9 @@ export default function TasksPage() {
 
     return (
         <div className="p-4 space-y-8 pb-24">
-            <header className="flex justify-between items-start pr-14">
+            <header className="flex justify-between items-start pr-24">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Tasks & Penalties</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Tasks & Consequences</h1>
                     <p className="text-gray-500">Manage everything that needs doing (and what shouldn't have been done).</p>
                 </div>
                 {currentUser?.role === 'parent' && !isAddingTask && !isAddingConsequence && (
