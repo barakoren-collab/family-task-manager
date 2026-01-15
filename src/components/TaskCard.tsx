@@ -60,6 +60,20 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                 status: 'completed',
                 current_count: newCount
             });
+
+            // Create notification for all parents
+            const users = await store.getUsers();
+            const parents = users.filter(u => u.role === 'parent');
+            for (const parent of parents) {
+                await store.createNotification({
+                    user_id: parent.id,
+                    type: 'task_completed',
+                    title: 'Task Completed!',
+                    message: `${currentUser.name} completed: ${task.title}`,
+                    is_read: false,
+                    related_id: task.id
+                });
+            }
         } else {
             // JUST PROGRESS
             await new Promise(r => setTimeout(r, 300));
@@ -86,6 +100,16 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                     points: worker.points + task.points_reward,
                     xp: worker.xp + task.points_reward,
                     total_xp: (worker.total_xp || 0) + task.points_reward
+                });
+
+                // Create notification for the kid
+                await store.createNotification({
+                    user_id: worker.id,
+                    type: 'task_approved',
+                    title: 'Task Approved! 🎉',
+                    message: `${task.title} - You earned ${task.points_reward} points!`,
+                    is_read: false,
+                    related_id: task.id
                 });
             }
         }

@@ -51,3 +51,16 @@ export interface Activity {
     details: string;
     created_at: string;
 }
+
+export type NotificationType = 'task_completed' | 'task_assigned' | 'leaderboard_change' | 'consequence_applied' | 'task_approved';
+
+export interface Notification {
+    id: string;
+    user_id: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    is_read: boolean;
+    created_at: string;
+    related_id?: string; // Optional reference to task/user/etc
+}

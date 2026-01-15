@@ -5,6 +5,7 @@ import { UserSwitcher } from './UserSwitcher';
 import { useState } from 'react';
 import { ProfileModal } from './ProfileModal';
 import { BottomNav } from './BottomNav';
+import { NotificationBell } from './NotificationBell';
 
 export function Shell({ children }: { children: React.ReactNode }) {
     const { currentUser } = useUser();
@@ -17,8 +18,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     // Add padding bottom for BottomNav
     return (
         <div className="min-h-screen bg-gray-50 pb-24 relative">
-            {/* User Profile Trigger */}
-            <div className="fixed top-4 right-4 z-50">
+            {/* Header with Notification Bell and User Profile */}
+            <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+                <NotificationBell />
                 <button
                     onClick={() => setIsProfileOpen(true)}
                     className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg shadow-indigo-100 hover:scale-110 active:scale-95 transition-all"

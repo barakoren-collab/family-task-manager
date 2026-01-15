@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { User, Task, Reward, Activity, Consequence } from '@/types';
+import { User, Task, Reward, Activity, Consequence, Notification } from '@/types';
 
 // Fallback Mock Data for initial load before DB connection if needed, 
 // strictly not used if Supabase is connected, but types are useful.
@@ -161,6 +161,51 @@ class SupabaseService {
     async deleteConsequence(consequenceId: string) {
         const { error } = await supabase.from('consequences').delete().eq('id', consequenceId);
         if (error) console.error('Error deleting consequence:', error);
+    }
+
+    // NOTIFICATIONS
+    async getNotifications(userId: string): Promise<Notification[]> {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        if (error) {
+            console.error('Error fetching notifications:', error);
+            return [];
+        }
+        return data as Notification[];
+    }
+
+    async createNotification(notification: Omit<Notification, 'id' | 'created_at'>) {
+        const { error } = await supabase.from('notifications').insert({
+            ...notification,
+            id: Math.random().toString(36).substr(2, 9),
+            created_at: new Date().toISOString()
+        });
+        if (error) console.error('Error creating notification:', error);
+    }
+
+    async markNotificationAsRead(notificationId: string) {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', notificationId);
+        if (error) console.error('Error marking notification as read:', error);
+    }
+
+    async markAllNotificationsAsRead(userId: string) {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', userId)
+            .eq('is_read', false);
+        if (error) console.error('Error marking all notifications as read:', error);
+    }
+
+    async deleteNotification(notificationId: string) {
+        const { error } = await supabase.from('notifications').delete().eq('id', notificationId);
+        if (error) console.error('Error deleting notification:', error);
     }
 
     async resetLeaderboard() {

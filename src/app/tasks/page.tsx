@@ -11,7 +11,7 @@ import confetti from 'canvas-confetti';
 export default function TasksPage() {
     const { currentUser, users, refreshUsers } = useUser();
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [consequences, setPenalties] = useState<Consequence[]>([]);
+    const [consequences, setConsequences] = useState<Consequence[]>([]);
 
     // Management State
     const [isAddingTask, setIsAddingTask] = useState(false);
@@ -31,13 +31,13 @@ export default function TasksPage() {
     const [isEditingConsequence, setIsEditingConsequence] = useState<string | null>(null);
 
     const refreshData = async () => {
-        const [fetchedTasks, fetchedPenalties] = await Promise.all([
+        const [fetchedTasks, fetchedConsequences] = await Promise.all([
             store.getTasks(),
-            store.getPenalties()
+            store.getConsequences()
         ]);
 
         if (currentUser?.role === 'kid') {
-            setTasks(fetchedTasks.filter(t =>
+            setTasks(fetchedTasks.filter((t: Task) =>
                 t.assigned_to === currentUser.id ||
                 t.assigned_to === 'unassigned' ||
                 t.assigned_to === 'all'
@@ -45,7 +45,7 @@ export default function TasksPage() {
         } else {
             setTasks(fetchedTasks);
         }
-        setPenalties(fetchedPenalties);
+        setConsequences(fetchedConsequences);
     };
 
     useEffect(() => {
@@ -100,6 +100,31 @@ export default function TasksPage() {
             created_at: new Date().toISOString(),
         };
         await store.addTask(newTask);
+
+        // Create notification for assigned kid(s)
+        if (assignee !== 'unassigned' && assignee !== 'all') {
+            await store.createNotification({
+                user_id: assignee,
+                type: 'task_assigned',
+                title: 'New Task Assigned!',
+                message: `${title} - ${points} points`,
+                is_read: false,
+                related_id: newTask.id
+            });
+        } else if (assignee === 'all') {
+            // Notify all kids
+            const kids = users.filter(u => u.role === 'kid');
+            for (const kid of kids) {
+                await store.createNotification({
+                    user_id: kid.id,
+                    type: 'task_assigned',
+                    title: 'New Task Assigned!',
+                    message: `${title} - ${points} points`,
+                    is_read: false,
+                    related_id: newTask.id
+                });
+            }
+        }
     };
 
     const handleCreateOrUpdateConsequence = async (e: React.FormEvent) => {
@@ -141,6 +166,16 @@ export default function TasksPage() {
                 user_id: targetUserId,
                 type: 'suggestion', // Repurposing suggestion type or we could add 'consequence' type
                 details: `Consequence Applied: ${consequence.title} (-${consequence.points_deduction} pts)`
+            });
+
+            // Create notification for the kid
+            await store.createNotification({
+                user_id: targetUserId,
+                type: 'consequence_applied',
+                title: 'Consequence Applied',
+                message: `${consequence.title} - ${consequence.points_deduction} points deducted`,
+                is_read: false,
+                related_id: consequence.id
             });
 
             await refreshUsers();
