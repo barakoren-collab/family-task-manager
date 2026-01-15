@@ -168,7 +168,7 @@ export default function StorePage() {
                     </div>
                     <p className="text-gray-500 text-sm">Spend your hard-earned points</p>
                 </div>
-                <div className="flex flex-col items-end pr-14 shrink-0">
+                <div className="flex flex-col items-end pr-24 shrink-0">
                     <div className="bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-full text-sm border border-amber-200">
                         {currentUser?.points || 0} pts
                     </div>
