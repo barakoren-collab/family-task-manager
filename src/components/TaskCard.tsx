@@ -8,14 +8,17 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useUser } from './UserContext';
 import { store } from '@/lib/store';
+import { Pencil } from 'lucide-react';
+import { UserAvatar } from './UserAvatar';
 
 interface TaskCardProps {
     task: Task;
     onUpdate?: () => void;
+    onEdit?: (task: Task) => void;
 }
 
-export function TaskCard({ task, onUpdate }: TaskCardProps) {
-    const { currentUser } = useUser();
+export function TaskCard({ task, onUpdate, onEdit }: TaskCardProps) {
+    const { currentUser, users } = useUser();
     const [isProcessing, setIsProcessing] = useState(false);
 
     const isAssignedToMe = currentUser?.id === task.assigned_to;
@@ -58,7 +61,8 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
             await new Promise(r => setTimeout(r, 800));
             await store.updateTask(task.id, {
                 status: 'completed',
-                current_count: newCount
+                current_count: newCount,
+                completed_by: currentUser.id
             });
 
             // Create notification for all parents
@@ -148,12 +152,21 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
             )}
         >
             <div className="flex items-start justify-between mb-2">
-                <div>
+                <div className="flex-1 pr-2">
                     <div className="flex items-center gap-2 mb-1">
                         <h3 className={cn("font-semibold text-gray-900 leading-tight", isPendingApproval && "text-gray-500")}>
                             {task.title}
                         </h3>
                         {task.is_recurring && <Repeat size={14} className="text-gray-400" />}
+                        {isParent && onEdit && (
+                            <button
+                                onClick={() => onEdit(task)}
+                                className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors ml-1"
+                                title="Edit Task"
+                            >
+                                <Pencil size={14} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2 text-sm flex-wrap">
@@ -188,7 +201,7 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                             isUnassigned
                                 ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
                                 : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95",
-                            !canInteract && "opacity-50 cursor-not-allowed"
+                            !canInteract && "opacity-50 cursor-not-allowed hidden"
                         )}
                     >
                         {isProcessing ? (
@@ -212,19 +225,38 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
                     </button>
                 )}
 
+                {/* PARENT APPROVAL VIEW */}
                 {isPendingApproval && isParent && (
-                    <button
-                        onClick={handleApprove}
-                        disabled={isProcessing}
-                        className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-100 hover:bg-emerald-600 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                        {isProcessing ? '...' : <CheckCircle2 size={18} />} Approve
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                        {task.completed_by && (
+                            <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                                <span className="text-xs text-indigo-700 font-medium">Completed by</span>
+                                <div className="flex items-center gap-1.5">
+                                    <UserAvatar
+                                        user={users?.find(u => u.id === task.completed_by) || {}}
+                                        size="sm"
+                                        className="w-5 h-5 text-[9px]"
+                                    />
+                                    <span className="text-xs font-bold text-gray-900">
+                                        {users?.find(u => u.id === task.completed_by)?.name}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        <button
+                            onClick={handleApprove}
+                            disabled={isProcessing}
+                            className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg shadow-emerald-100 hover:bg-emerald-600 active:scale-95 transition-all flex items-center gap-2"
+                        >
+                            {isProcessing ? '...' : <CheckCircle2 size={18} />} Approve
+                        </button>
+                    </div>
                 )}
 
+                {/* KID WAITING STATE */}
                 {isPendingApproval && !isParent && (
-                    <div className="h-12 w-12 flex items-center justify-center text-orange-500">
-                        <Clock size={28} />
+                    <div className="flex flex-col items-center justify-center h-12 w-12 rounded-full bg-orange-50 text-orange-500 border border-orange-100">
+                        <CheckCircle2 size={24} />
                     </div>
                 )}
             </div>
@@ -241,11 +273,16 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
             )}
 
             {isPendingApproval && !isParent && (
-                <div className="text-xs text-orange-500 flex items-center gap-1 mt-2 font-medium">
-                    <Clock size={12} /> Waiting for Parent to Approve
+                <div className="bg-orange-50 rounded-lg p-2 mt-2 flex items-center justify-center gap-2 border border-orange-100">
+                    <Clock size={14} className="text-orange-500" />
+                    <span className="text-xs font-bold text-orange-700">
+                        {task.completed_by === currentUser?.id
+                            ? "Waiting for parent approval"
+                            : `Completed by ${users?.find(u => u.id === task.completed_by)?.name || 'someone'}`
+                        }
+                    </span>
                 </div>
             )}
-
         </motion.div>
     );
 }

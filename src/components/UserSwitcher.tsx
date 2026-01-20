@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { User } from '@/types';
+import { UserAvatar } from './UserAvatar';
+import { RoleBadge } from './RoleBadge';
 import { Lock, ArrowRight, X } from 'lucide-react';
 
 export function UserSwitcher() {
@@ -26,6 +28,10 @@ export function UserSwitcher() {
     };
 
     const handleSelectUser = (user: User) => {
+        if (!user.password) {
+            setCurrentUser(user);
+            return;
+        }
         setSelectedUser(user);
         setPassword('');
         setError(false);
@@ -55,17 +61,13 @@ export function UserSwitcher() {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => handleSelectUser(user)}
-                                    className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-indigo-100 ring-2 ring-transparent hover:ring-indigo-500/20 transition-all"
+                                    className="flex flex-col items-center p-6 bg-white rounded-3xl shadow-sm border border-gray-100 hover:border-indigo-100 ring-4 ring-transparent hover:ring-indigo-50 transition-all relative overflow-hidden group"
                                 >
-                                    <div className="bg-indigo-100 rounded-full w-24 h-24 flex items-center justify-center text-4xl mb-4 shadow-inner overflow-hidden border-4 border-white">
-                                        {user.avatar_url?.startsWith('http') ? (
-                                            <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            user.avatar_url
-                                        )}
+                                    <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                                        <UserAvatar user={user} size="2xl" showBorder />
                                     </div>
-                                    <span className="font-semibold text-gray-800 text-lg">{user.name}</span>
-                                    <span className="text-xs text-gray-400 capitalize mt-1">{user.role}</span>
+                                    <span className="font-bold text-gray-800 text-lg mb-1">{user.name}</span>
+                                    <RoleBadge role={user.role} />
                                 </motion.button>
                             ))}
                         </div>
@@ -80,46 +82,42 @@ export function UserSwitcher() {
                     >
                         <button
                             onClick={() => setSelectedUser(null)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-50 rounded-full transition-colors"
                         >
                             <X size={24} />
                         </button>
 
-                        <div className="flex flex-col items-center mb-6">
-                            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-indigo-100 mb-3">
-                                {selectedUser.avatar_url?.startsWith('http') ? (
-                                    <img src={selectedUser.avatar_url} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-4xl">{selectedUser.avatar_url}</div>
-                                )}
+                        <div className="flex flex-col items-center mb-8 mt-2">
+                            <div className="mb-4">
+                                <UserAvatar user={selectedUser} size="3xl" showBorder />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900">Hello, {selectedUser.name}!</h2>
-                            <p className="text-gray-500 text-sm">Enter your password to continue</p>
+                            <p className="text-gray-500 text-sm mt-1">Enter your password to continue</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                 <input
                                     type="password"
                                     placeholder="Password"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     className={cn(
-                                        "w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all",
+                                        "w-full pl-11 pr-4 py-4 rounded-2xl border bg-gray-50 focus:bg-white focus:outline-none focus:ring-4 transition-all text-lg",
                                         error
-                                            ? "border-red-300 ring-2 ring-red-100 bg-red-50"
-                                            : "border-gray-200 focus:ring-indigo-500"
+                                            ? "border-red-300 ring-red-100 placeholder:text-red-300"
+                                            : "border-gray-200 focus:border-indigo-500 focus:ring-indigo-500/20"
                                     )}
                                     autoFocus
                                 />
                             </div>
 
-                            {error && <p className="text-red-500 text-sm text-center">Incorrect password</p>}
+                            {error && <p className="text-red-500 text-sm text-center font-medium animate-pulse">Incorrect password</p>}
 
                             <button
                                 type="submit"
-                                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 active:scale-95 transition-all"
+                                className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-700 active:scale-95 transition-all shadow-lg shadow-indigo-200"
                             >
                                 Sign In <ArrowRight size={20} />
                             </button>

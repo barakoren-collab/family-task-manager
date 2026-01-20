@@ -385,9 +385,9 @@ export default function TasksPage() {
                     </section>
                 )}
 
-                <TaskSection title="Daily Tasks" tasksList={dailyTasks} />
-                <TaskSection title="Weekly Tasks" tasksList={weeklyTasks} />
-                <TaskSection title="Other Tasks" tasksList={otherTasks} />
+                <TaskSection title="Daily Tasks" tasksList={dailyTasks} onRefresh={refreshData} onEdit={handleEditTask} />
+                <TaskSection title="Weekly Tasks" tasksList={weeklyTasks} onRefresh={refreshData} onEdit={handleEditTask} />
+                <TaskSection title="Other Tasks" tasksList={otherTasks} onRefresh={refreshData} onEdit={handleEditTask} />
                 {tasks.length === 0 && (
                     <div className="col-span-full py-12 text-center text-gray-400 italic bg-white rounded-3xl border border-dashed border-gray-200">
                         No tasks yet. {currentUser?.role === 'parent' ? 'Click the + to add one!' : ''}
@@ -398,7 +398,7 @@ export default function TasksPage() {
     );
 }
 
-const TaskSection = ({ title, tasksList }: { title: string, tasksList: Task[] }) => {
+const TaskSection = ({ title, tasksList, onRefresh, onEdit }: { title: string, tasksList: Task[], onRefresh: () => void, onEdit: (task: Task) => void }) => {
     const { currentUser, refreshUsers } = useUser();
 
     return (
@@ -408,7 +408,15 @@ const TaskSection = ({ title, tasksList }: { title: string, tasksList: Task[] })
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {tasksList.map(task => (
                         <div key={task.id} className="relative group">
-                            <TaskCard task={task} onUpdate={() => window.location.reload()} />
+                            <TaskCard
+                                task={task}
+                                onUpdate={onRefresh}
+                                onEdit={(t) => {
+                                    // We need to pass this up to the parent component
+                                    // But TaskSection is inside TasksPage, so we need to pass handleEditTask down
+                                    if (onEdit) onEdit(t);
+                                }}
+                            />
                         </div>
                     ))}
                 </div>

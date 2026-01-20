@@ -2,6 +2,7 @@
 
 import { useUser } from './UserContext';
 import { UserSwitcher } from './UserSwitcher';
+import { UserAvatar } from './UserAvatar';
 import { useState } from 'react';
 import { ProfileModal } from './ProfileModal';
 import { BottomNav } from './BottomNav';
@@ -23,15 +24,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <NotificationBell />
                 <button
                     onClick={() => setIsProfileOpen(true)}
-                    className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg shadow-indigo-100 hover:scale-110 active:scale-95 transition-all"
+                    className="hover:scale-110 active:scale-95 transition-all outline-none"
                 >
-                    {currentUser.avatar_url?.startsWith('http') ? (
-                        <img src={currentUser.avatar_url} className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full bg-indigo-600 text-white flex items-center justify-center text-xl font-bold">
-                            {currentUser.avatar_url}
-                        </div>
-                    )}
+                    <UserAvatar user={currentUser} size="lg" showBorder />
                 </button>
             </div>
 

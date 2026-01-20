@@ -5,6 +5,7 @@ export interface User {
     name: string;
     role: UserRole;
     avatar_url?: string;
+    color?: string;
     xp: number;         // Current weekly XP
     points: number;     // Spendable points
     total_xp: number;   // Lifetime XP
@@ -28,6 +29,7 @@ export interface Task {
     current_count: number;
     created_by: string; // User ID
     created_at: string;
+    completed_by?: string; // ID of user who completed it
 }
 
 export interface Reward {

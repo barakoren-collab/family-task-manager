@@ -2,6 +2,7 @@
 
 import { useUser } from '@/components/UserContext';
 import { TaskCard } from '@/components/TaskCard';
+import { UserAvatar } from '@/components/UserAvatar';
 import { store } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { Task, User } from '@/types';
@@ -11,14 +12,16 @@ export default function Home() {
   const { currentUser } = useUser();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [rank, setRank] = useState<number>(0);
+  const [myPurchases, setMyPurchases] = useState<any[]>([]);
 
   const fetchData = async () => {
     if (!currentUser) return;
 
     // Fetch all needed data
-    const [allTasks, allUsers] = await Promise.all([
+    const [allTasks, allUsers, allActivities] = await Promise.all([
       store.getTasks(),
-      store.getUsers()
+      store.getUsers(),
+      store.getActivities()
     ]);
 
     // Calculate Rank
@@ -40,6 +43,21 @@ export default function Home() {
       }
     });
     setTasks(relevantTasks);
+
+    // Filter My Purchases
+    const purchases = allActivities
+      .filter(a => a.user_id === currentUser.id && a.type === 'purchase')
+      .map(a => {
+        // Parse details "Purchased [Title] for [Cost] pts"
+        const match = a.details.match(/Purchased (.+) for (\d+) pts/);
+        return {
+          id: a.id,
+          title: match ? match[1] : 'Reward',
+          cost: match ? parseInt(match[2]) : 0,
+          date: new Date(a.created_at).toLocaleDateString()
+        };
+      });
+    setMyPurchases(purchases);
   };
 
   useEffect(() => {
@@ -56,12 +74,8 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-gray-900">Hi, {currentUser.name}!</h1>
           <p className="text-gray-500 text-sm">Let's get things done.</p>
         </div>
-        <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-          {currentUser.avatar_url?.startsWith('http') ? (
-            <img src={currentUser.avatar_url} alt="You" className="w-full h-full object-cover" />
-          ) : (
-            <div className="text-2xl">{currentUser.avatar_url}</div>
-          )}
+        <div className="rounded-full shadow-sm border border-gray-100">
+          <UserAvatar user={currentUser} size="xl" />
         </div>
       </header>
 
@@ -116,6 +130,22 @@ export default function Home() {
           STREAK
         </div>
       </div>
+
+      {/* MY REWARDS SECTION */}
+      {myPurchases.length > 0 && (
+        <section>
+          <h2 className="font-bold text-gray-800 mb-2 text-sm uppercase tracking-wide opacity-70">Recent Rewards</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {myPurchases.slice(0, 5).map(p => (
+              <div key={p.id} className="min-w-[140px] bg-amber-50 border border-amber-100 p-3 rounded-xl flex flex-col gap-1 shadow-sm">
+                <span className="text-xl">🎁</span>
+                <span className="font-bold text-gray-900 text-sm truncate">{p.title}</span>
+                <span className="text-xs text-amber-600 font-bold">-{p.cost} pts</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="flex items-center justify-between mb-3">
