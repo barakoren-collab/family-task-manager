@@ -118,16 +118,9 @@ export function TaskCard({ task, onUpdate, onEdit }: TaskCardProps) {
             }
         }
 
-        // Mark as approved (or delete if it's a one-off)
-        if (task.is_recurring) {
-            // Reset for next time
-            await store.updateTask(task.id, {
-                status: 'pending',
-                current_count: 0
-            });
-        } else {
-            await store.updateTask(task.id, { status: 'approved' });
-        }
+        // Mark as approved
+        // Recurring tasks will be reset by the nightly job
+        await store.updateTask(task.id, { status: 'approved' });
 
         confetti({
             particleCount: 100,

@@ -231,6 +231,20 @@ class SupabaseService {
         const { error: updateError } = await supabase.from('users').upsert(updates);
         if (updateError) console.error('Error resetting leaderboard:', updateError);
     }
+    async resetDailyTasks() {
+        // Reset all recurring tasks to pending with 0 progress
+        // This runs nightly via Cron
+        const { error } = await supabase
+            .from('tasks')
+            .update({
+                status: 'pending',
+                current_count: 0,
+                completed_by: null // Clear who completed it
+            })
+            .eq('is_recurring', true);
+
+        if (error) console.error('Error resetting daily tasks:', error);
+    }
 }
 
 export const store = new SupabaseService();
